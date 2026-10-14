@@ -1,6 +1,18 @@
 # Emotion Lab
 
-A Pygame simulation of signals, hormone interactions, and emotion feedback.
+Emotion Lab explores how incoming signals can change hormone concentrations and produce measurable emotional responses. Its purpose is to receive signals, reflect their effects in hormone concentration regulation, and quantify emotions as numerical scores in a dynamic simulation.
+
+Current hormone levels influence how each signal is interpreted, so the same stimulus can produce different emotional responses under different internal states. The resulting emotion scores feed back into secretion, while delayed inhibition and interactions between hormones regulate concentrations over time.
+
+```text
+Incoming signals + current hormone state
+                  -> stimulus interpretation
+                  -> numerical emotion scores
+                  -> secretion and hormone concentration regulation
+                  -> internal state for the next signal
+```
+
+The simulation supports experiments with repeated or identical signals to observe how hormone interactions change emotional responses and help them stabilize or recover.
 
 ![Emotion Lab simulation interface](image/emotion-lab.png)
 
