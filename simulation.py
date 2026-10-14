@@ -3,14 +3,15 @@ from dataclasses import dataclass
 import random
 import math
 from hormone_profiles import PROFILES, SOURCES
-from vision import visual_features
+from vision import visual_features, signal_order
 from hormone_dynamics import HormoneDynamics
 
 SIZE = 100
 MAX_CONCENTRATION = 0.05
 NAMES = [p[0] for p in PROFILES]
 EMOTION_COLORS = {'Joy': '#FFD166', 'Calm': '#70C1B3', 'Bonding': '#F78FB3',
-                  'Tension': '#E63946', 'Anger': '#FF5722', 'Interest': '#56CCF2', 'Low mood': '#9381FF'}
+                  'Anxiety': '#E63946', 'Anger': '#FF5722', 'Interest': '#56CCF2',
+                  'Low mood': '#9381FF', 'Boredom': '#A3ADB8'}
 
 
 def clamp(value, low=0.0, high=1.0):
@@ -57,6 +58,14 @@ class Simulation:
         self.interpretation = {}
         self.evaluated_emotion = None
         self.regulation_history = []
+        self.familiarity = 0.
+        self.boredom = 0.
+        self.novelty = 1.
+        self.stimulus_reference = None
+        self.stimulus_context = None
+        self.order = 1.
+        self.disorder = 0.
+        self.habituation_rate = .04
 
     def reconcile(self):
         """Preserve existing cells; randomly remove excess and fill vacancies."""
@@ -102,6 +111,9 @@ class Simulation:
         previous = self.inputs[:]
         self.inputs = [clamp(v) for v in inputs]
         self.visual_features = visual_features(self.inputs, previous)
+        self.update_habituation()
+        self.order = signal_order(self.inputs)
+        self.disorder = clamp((.65 - self.order) / .65) * (.3 + .7 * self.novelty)
         signals = self.inputs[:]
         self.last_path = []
         # Hormones remain stationary throughout all 100 signal steps.
@@ -147,11 +159,19 @@ class Simulation:
                                v['edges'] * (1 - threat) * .4) * (.5 + .5 * responses[0])
                 social = v['smile'] * (.5 + .5 * responses[2])
                 safety = clamp(1 - threat - v['motion']) * (.5 + .5 * responses[3])
+        # Unpredictability supplies alarm evidence, not a reward for novelty.
+        reward *= 1 - self.disorder
+        threat = clamp(threat + .75 * self.disorder)
+        safety = clamp(safety + .25 * self.order) * (1 - .9 * self.disorder)
         old = [c / MAX_CONCENTRATION for c in self.concentrations]
         # The SAME evidence is interpreted using the pre-update chemical state.
         self.interpretation = self.interpret_stimulus(reward, threat, social, safety, old)
         reward, threat, social, safety = (self.interpretation[k]
                                         for k in ('reward', 'threat', 'social', 'safety'))
+        # Familiar input reduces reward demand; an unexpected input restores it.
+        engagement = 1 - .85 * self.familiarity
+        reward *= engagement
+        self.interpretation['reward'] = reward
         v = self.visual_features
         if self.visual_mode and self.context == 'neutral':
             frustration = clamp(v['frown'] + .35 * threat - .5 * reward)
@@ -162,8 +182,12 @@ class Simulation:
             attention = clamp(variability + reward)
             low_stimulation = clamp(1 - intensity - reward)
         self.frustration = .7 * self.frustration + .3 * frustration
+        attention = clamp(attention * engagement + .6 * self.novelty * self.order) * (1 - self.disorder)
         self.attention = .7 * self.attention + .3 * attention
         self.low_stimulation = .94 * self.low_stimulation + .06 * low_stimulation
+        chemical_engagement = .55 * old[0] + .45 * old[5]
+        boredom_target = self.familiarity * (1 - .65 * chemical_engagement) * (1 - threat)
+        self.boredom = .9 * self.boredom + .1 * boredom_target
         self.drives = {
             'reward': reward, 'safety': safety, 'social': social,
             'stress': clamp(.7 * threat + .3 * variability), 'threat': threat,
@@ -180,8 +204,12 @@ class Simulation:
         self.evaluated_emotion = self.emotion()
         scores = self.evaluated_emotion[1]
         for driver, label in (('reward', 'Joy'), ('safety', 'Calm'), ('social', 'Bonding'),
-                              ('stress', 'Tension'), ('threat', 'Anger'), ('arousal', 'Interest')):
+                              ('stress', 'Anxiety'), ('threat', 'Anger'), ('arousal', 'Interest')):
             self.drives[driver] = clamp(.70 * self.drives[driver] + .30 * scores[label])
+        # Habituation also changes chemistry, rather than only dimming a score.
+        self.drives['reward'] *= (1 - .75 * self.familiarity) * (1 - self.disorder)
+        self.drives['arousal'] = clamp(self.drives['arousal'] * (1 - .75 * self.familiarity)
+                                       + .25 * self.novelty * self.order + .4 * self.disorder)
         self.concentrations = [MAX_CONCENTRATION * c for c in
                                self.dynamics.advance(old, self.drives)]
         self.shift_left()
@@ -196,7 +224,28 @@ class Simulation:
             'emotion': self.evaluated_emotion,
             'concentrations_before': [c * MAX_CONCENTRATION for c in old],
             'concentrations_after': self.concentrations[:], **self.dynamics.last})
+        self.regulation_history[-1]['habituation'] = self.habituation_state()
         self.regulation_history = self.regulation_history[-240:]
+
+    def update_habituation(self):
+        """Track raw-input familiarity independently of changing hormone outputs."""
+        if self.stimulus_reference is None or self.stimulus_context != self.context:
+            self.stimulus_reference = self.inputs[:]
+            self.stimulus_context = self.context
+            self.novelty, self.familiarity = 1., 0.
+            return
+        difference = sum(abs(a-b) for a, b in zip(self.inputs, self.stimulus_reference)) / SIZE
+        self.novelty = clamp(difference / .15)
+        similarity = math.exp(-difference / .04)
+        rate = self.habituation_rate
+        self.familiarity = ((1 - rate) * self.familiarity + rate * similarity) * (1 - .9 * self.novelty)
+        self.stimulus_reference = [.85 * a + .15 * b
+                                   for a, b in zip(self.stimulus_reference, self.inputs)]
+
+    def habituation_state(self):
+        return {'novelty': self.novelty, 'familiarity': self.familiarity,
+                'boredom': self.boredom, 'order': self.order, 'disorder': self.disorder,
+                'habituation_rate': self.habituation_rate}
 
     def interpret_stimulus(self, reward, threat, social, safety, levels=None):
         """Synthetic state-dependent appraisal; accepts fixed evidence for experiments."""
@@ -212,16 +261,18 @@ class Simulation:
     def emotion(self):
         c = [v / MAX_CONCENTRATION for v in self.concentrations]
         scores = {}
-        for label in ('Joy', 'Calm', 'Bonding', 'Tension'):
+        for label in ('Joy', 'Calm', 'Bonding', 'Anxiety'):
             weights = [h.emotion_weights.get(label, 0.) for h in self.hormones]
             scores[label] = clamp(sum(v * w for v, w in zip(c, weights)) /
                                   sum(w for w in weights if w > 0))
         # Exploratory labels, not diagnoses. Hormone levels plus stimulus memory.
         scores['Anger'] = clamp((.5 * c[3] + .3 * c[4] + .2 * c[5] - .2 * c[1]) *
                               (.4 + 1.1 * self.frustration))
-        scores['Interest'] = clamp((.55 * c[0] + .45 * c[5]) * (.4 + self.attention))
+        scores['Interest'] = clamp((.55 * c[0] + .45 * c[5]) * (.4 + self.attention) *
+                                   (1 - .85 * self.boredom) * (1 - .9 * self.disorder))
         scores['Low mood'] = clamp((.45 * (1 - c[0]) + .35 * (1 - c[1]) + .2 * c[3]) *
                               self.low_stimulation)
+        scores['Boredom'] = clamp(self.boredom)
         ordered = sorted(scores, key=scores.get, reverse=True)
         label = 'Mixed' if scores[ordered[0]] - scores[ordered[1]] < .04 else ordered[0]
         return label, scores

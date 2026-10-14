@@ -13,9 +13,9 @@ Each species occupies up to 500 cells of a 100 x 100 grid. Concentration ranges 
 | Dopamine | Reward learning and motivation | Reward drive, Joy |
 | Serotonin | Mood, sleep, appetite regulation | Safety drive, Calm |
 | Oxytocin | Bonding, childbirth, milk release | Social drive, Bonding |
-| Cortisol | Stress response and metabolism | Stress drive, Tension |
-| Adrenaline | Acute fight-or-flight response | Threat drive, Tension, Arousal |
-| Norepinephrine | Alertness and attention | Arousal drive, Tension, Interest |
+| Cortisol | Stress response and metabolism | Stress drive, Anxiety |
+| Adrenaline | Acute fight-or-flight response | Threat drive, Anxiety, Arousal |
+| Norepinephrine | Alertness and attention | Arousal drive, Anxiety, Interest |
 | Endorphin | Pain relief and well-being | Relief drive, Joy, Calm |
 | Melatonin | Circadian and sleep signaling | Darkness drive, Sleepiness |
 | Vasopressin | Water retention and fluid balance | Fixed hydration drive |
@@ -37,9 +37,21 @@ The cycle follows `current concentrations -> stimulus interpretation -> complete
 
 Visual features include brightness, motion, edges, positive area expansion, and similarity to synthetic smiling/frowning templates. They provide illustrative evidence for reward, threat, social engagement, and safety. Four interleaved output channels modulate that evidence relative to moving baselines. Explicit contexts assign meanings to signal intensity.
 
-A concentration-dependent alarm combination and buffering combination modify interpretation. Frustration, attention, and low-stimulation memories provide temporal context. Joy, Calm, Bonding, and Tension use weighted concentrations; Anger, Interest, and Low mood combine concentrations with these memories. All scores range from 0 to 1. A difference below 0.04 between the two highest scores produces Mixed.
+A concentration-dependent alarm combination and buffering combination modify interpretation. Frustration, attention, and low-stimulation memories provide temporal context. Joy, Calm, Bonding, and Anxiety use weighted concentrations; Anger, Interest, and Low mood combine concentrations with these memories. All scores range from 0 to 1. A difference below 0.04 between the two highest scores produces Mixed.
 
 The full emotion vector influences secretion. Selected drives combine 70% interpreted stimulus response and 30% associated emotion score. The evaluated emotion is retained for display and history before concentrations advance.
+
+## Habituation and signal order
+
+Raw inputs are compared with a moving reference independently of hormone-modified outputs. Repeated input accumulates familiarity with a 4% update; unexpected changes release familiarity. Familiarity reduces reward and arousal drives, which lowers modeled dopamine and norepinephrine secretion. Boredom accumulates gradually using familiarity, current chemical engagement, and interpreted threat. It is a separate score from Low mood. Interest uses hormone concentrations, attention, and boredom rather than novelty alone.
+
+Spatial order is estimated from the strongest absolute horizontal or vertical correlation at offsets of one to three pixels. This recognizes smooth and alternating patterns; a uniform field has maximal order. Disorder combines weak spatial correlation with temporal novelty. Disorder raises threat evidence, suppresses safety and reward, and reduces Interest. Predictable novelty can restore engagement. Anxiety is the concentration-based stress score formerly labeled Tension.
+
+These rules and constants are synthetic. Short-range correlation is an illustrative pattern detector, not a general measure of meaningful structure or a biological model of anxiety. Repeated animated patterns are not yet learned as complete sequences.
+
+### Attention duration
+
+The default habituation rate of 0.04 per cycle deliberately represents a short attention duration. Identical inputs need not lose interest at the same rate across modeled individuals: a lower `Simulation.habituation_rate` slows familiarity accumulation, reward/arousal reduction, and boredom onset. This is a configurable model parameter, not a calibrated measurement or diagnosis of a person's attention. Time is measured in cycles, and the interface currently has no attention-duration presets.
 
 ## Delayed interaction network
 

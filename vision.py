@@ -68,3 +68,26 @@ def visual_features(pixels, previous):
         return max(0., 1 - sum(abs(a - b) for a, b in zip(normalized, template)) / 100 * 8)
     return {'brightness': brightness, 'motion': motion, 'edges': edges, 'looming': looming,
             'smile': similarity(face(True)), 'frown': similarity(face(False))}
+
+
+def signal_order(pixels):
+    """Synthetic spatial predictability from short-range linear correlations.
+
+    Absolute correlation recognizes alternating as well as smooth patterns.
+    Uniform fields have maximal order. This is not an entropy measurement.
+    """
+    def correlation(a, b):
+        ma, mb = sum(a) / len(a), sum(b) / len(b)
+        va, vb = sum((v-ma)**2 for v in a), sum((v-mb)**2 for v in b)
+        if va * vb < 1e-12:
+            return 1. if va + vb < 1e-12 else 0.
+        return abs(sum((x-ma)*(y-mb) for x, y in zip(a, b)) / math.sqrt(va*vb))
+    values = []
+    for lag in (1, 2, 3):
+        a = [pixels[y*10+x] for y in range(10) for x in range(10-lag)]
+        b = [pixels[y*10+x+lag] for y in range(10) for x in range(10-lag)]
+        values.append(correlation(a, b))
+        a = [pixels[y*10+x] for y in range(10-lag) for x in range(10)]
+        b = [pixels[(y+lag)*10+x] for y in range(10-lag) for x in range(10)]
+        values.append(correlation(a, b))
+    return max(values)

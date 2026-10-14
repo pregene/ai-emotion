@@ -118,6 +118,7 @@ def main():
                                     'regulation': sim.dynamics.snapshot(),
                                     'regulation_history': sim.regulation_history,
                                     'interpretation': sim.interpretation,
+                                    'habituation': sim.habituation_state(),
                                     'body_state': sim.body_state(),
                                     'grid': sim.grid, 'inputs': sim.inputs, 'outputs': sim.outputs,
                                     'history': sim.history}, ensure_ascii=False, indent=2), encoding='utf-8')
@@ -218,7 +219,9 @@ def main():
                       for i, scores in enumerate(sim.emotion_history)]
             if len(points) > 1:
                 pygame.draw.lines(screen, color, False, points, 2)
-        text(f'G: Regulation {"ON" if sim.dynamics.enabled else "OFF"} · Delayed inhibition and interactions · 20 integration substeps', 34, 1019, 14, MUTED)
+        text(f'G: Regulation {"ON" if sim.dynamics.enabled else "OFF"} · '
+             f'Familiarity {sim.familiarity:.2f} · Novelty {sim.novelty:.2f} · '
+             f'Boredom {sim.boredom:.2f} · Order {sim.order:.2f} · Disorder {sim.disorder:.2f}', 34, 1019, 14, MUTED)
         pygame.draw.rect(screen, PANEL, (1395, 210, 235, 815), border_radius=12)
         text('Visual input · 10 × 10', 1405, 225, 18)
         draw_image(sim.inputs, 1415, 260, 20)

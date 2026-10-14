@@ -25,7 +25,10 @@ The simulation supports experiments with repeated or identical signals to observ
 - Eight synthetic 10 x 10 visual scenes: moving circle, approaching object, flash, smiling face, frowning face, flowing wave, random image, and static square.
 - Adjustable input strength, playback speed, context, and channel sensitivity.
 - State-dependent stimulus interpretation using current hormone concentrations.
-- Seven emotion scores: Joy, Calm, Bonding, Tension, Anger, Interest, and Low mood. Similar leading scores produce a Mixed label.
+- Eight emotion scores: Joy, Calm, Bonding, Anxiety, Anger, Interest, Low mood, and Boredom. Similar leading scores produce a Mixed label.
+- Familiarity and habituation that reduce interest and reward secretion during prolonged exposure to an unchanged screen; changed input restores engagement.
+- Separate novelty and signal-order estimates: predictable patterns support Calm, while irregular changing input supports Anxiety rather than Interest.
+- Configurable habituation speed for modeling different attention durations. The default uses a short attention duration, so repeated input loses interest relatively quickly.
 - Emotion feedback that adjusts secretion before the next concentration update.
 - Delayed inhibition, cross-hormone stimulation and suppression, secondary secretion, and concentration-dependent clearance.
 - Regulation toggle for comparing responses with and without the interaction network.
@@ -76,11 +79,18 @@ Each concentration ranges from 0 to 0.050 and corresponds to `round(concentratio
 
 ```powershell
 py experiment_regulation.py
+py experiment_habituation.py
 py -m unittest -v
 ```
 
 Experiments write `experiments/regulation.svg`, `experiments/summary.json`, and four CSV traces. They compare constant secretion drives with regulation enabled/disabled and identical inputs under different initial hormone states. The latter experiment isolates concentration-dependent interpretation by clearing the spatial grid before each cycle.
 
 Tests cover signal propagation, occupancy, emotion responses, delayed regulation, recovery, long-run bounds, and integration convergence.
+
+Habituation experiments write `experiments/habituation.csv` and `experiments/habituation-summary.json`. They measure a repeated smiling image, a subsequent screen change, and flowing-wave versus random input responses. Familiarity, novelty, boredom, order, and disorder are also displayed and exported with simulation snapshots.
+
+## Attention duration
+
+Different attention durations can produce different rates of interest loss under identical input. The default `Simulation.habituation_rate = 0.04` models a short attention duration: familiarity builds quickly, reward and arousal secretion decrease, and boredom rises. A lower rate models slower adaptation and maintains interest longer. This parameter describes simulation behavior, not a measured human attention span. Its time scale is cycles; playback speed changes how quickly cycles pass on screen. Attention-duration presets are not currently available in the interface.
 
 Model parameters, assumptions, and reference links are documented in [HORMONE_MODEL.md](HORMONE_MODEL.md). Concentrations and interaction coefficients are synthetic simulation values.

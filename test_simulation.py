@@ -4,7 +4,7 @@ from vision import VisualScene, SCENES, visual_features, face
 
 
 class SimulationTests(unittest.TestCase):
-    def test_seven_emotions_and_distinct_responses(self):
+    def test_eight_emotions_and_distinct_responses(self):
         results = {}
         for kind in ('smile', 'frown', 'moving', 'still'):
             sim, scene = Simulation(), VisualScene()
@@ -13,7 +13,7 @@ class SimulationTests(unittest.TestCase):
             for cycle in range(1, 81):
                 sim.step(scene.frame(cycle))
             results[kind] = sim.emotion()[1]
-            self.assertEqual(set(results[kind]), {'Joy', 'Calm', 'Bonding', 'Tension', 'Anger', 'Interest', 'Low mood'})
+            self.assertEqual(set(results[kind]), {'Joy', 'Calm', 'Bonding', 'Anxiety', 'Anger', 'Interest', 'Low mood', 'Boredom'})
             self.assertTrue(all(0 <= value <= 1 for value in results[kind].values()))
         self.assertGreater(results['frown']['Anger'], results['smile']['Anger'])
         self.assertGreater(results['moving']['Interest'], results['still']['Interest'])
@@ -52,23 +52,22 @@ class SimulationTests(unittest.TestCase):
                 sim.step(scene.frame(cycle))
             results[kind] = sim.emotion()[1]
         self.assertGreater(results['smile']['Bonding'], results['still']['Bonding'] + .1)
-        self.assertGreater(results['flash']['Tension'], results['still']['Tension'] + .05)
+        self.assertGreater(results['flash']['Anxiety'], results['still']['Anxiety'] + .05)
 
-    def test_neutral_random_signals_change_emotions(self):
+    def test_neutral_random_signals_sustain_anxiety_with_low_interest(self):
         sim = Simulation()
         for _ in range(240):
             sim.step(sim.stimulus('noise', 1.))
         settled = sim.emotion_history[80:]
-        for label in ('Joy', 'Bonding', 'Tension'):
-            values = [scores[label] for scores in settled]
-            self.assertGreater(max(values) - min(values), .04, label)
+        self.assertGreater(sum(s['Anxiety'] for s in settled) / len(settled), .4)
+        self.assertLess(sum(s['Interest'] for s in settled) / len(settled), .2)
 
     def test_constant_signals_settle_without_invented_noise(self):
         sim = Simulation()
         sim.grid = [[-1] * 100 for _ in range(100)]
         sim.concentrations = [0.] * 20
         # Isolate feedback from the evolving hormone placement.
-        for _ in range(120):
+        for _ in range(240):
             sim.grid = [[-1] * 100 for _ in range(100)]
             sim.step([.5] * 100)
         for label in sim.emotion_history[-1]:

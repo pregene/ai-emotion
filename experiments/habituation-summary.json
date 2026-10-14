@@ -1,0 +1,71 @@
+{
+  "static_early": {
+    "cycle": 11,
+    "phase": "static",
+    "novelty": 0.0,
+    "familiarity": 0.3351673640084989,
+    "boredom": 0.07805221081608897,
+    "order": 0.2349726775956284,
+    "disorder": 0.19155107187894072,
+    "interest": 0.2259912166131849,
+    "anxiety": 0.4698260869565218,
+    "dopamine": 0.0238,
+    "norepinephrine": 0.0246
+  },
+  "static_late": {
+    "cycle": 160,
+    "phase": "static",
+    "novelty": 0.0,
+    "familiarity": 0.9984825092471463,
+    "boredom": 0.6422027713406037,
+    "order": 0.2349726775956284,
+    "disorder": 0.19155107187894072,
+    "interest": 0.05503837313169252,
+    "anxiety": 0.40121739130434786,
+    "dopamine": 0.0144,
+    "norepinephrine": 0.0192
+  },
+  "changed": {
+    "cycle": 166,
+    "phase": "changed",
+    "novelty": 1.0,
+    "familiarity": 9.692963692211788e-07,
+    "boredom": 0.343518553378136,
+    "order": 1.0,
+    "disorder": 0.0,
+    "interest": 0.29884852324022243,
+    "anxiety": 0.3931304347826087,
+    "dopamine": 0.0201,
+    "norepinephrine": 0.0257
+  },
+  "wave": {
+    "novelty": 1.0,
+    "familiarity": 3.2657484867015896e-06,
+    "boredom": 2.0474867721858155e-06,
+    "order": 0.9547540615752382,
+    "disorder": 0.0,
+    "Joy": 0.45174999999999993,
+    "Calm": 0.49215384615384605,
+    "Bonding": 0.366,
+    "Anxiety": 0.41156521739130436,
+    "Anger": 0.11648230402820382,
+    "Interest": 0.7057387717554567,
+    "Low mood": 0.0,
+    "Boredom": 2.0474867721858155e-06
+  },
+  "noise": {
+    "novelty": 1.0,
+    "familiarity": 9.561807740678928e-06,
+    "boredom": 6.440456292737402e-07,
+    "order": 0.17407826738138066,
+    "disorder": 0.732187280951722,
+    "Joy": 0.4195,
+    "Calm": 0.2867692307692308,
+    "Bonding": 0.366,
+    "Anxiety": 0.5886956521739131,
+    "Anger": 0.37142392004318475,
+    "Interest": 0.09547519861449393,
+    "Low mood": 0.0,
+    "Boredom": 6.440456292737402e-07
+  }
+}
