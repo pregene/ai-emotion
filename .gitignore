@@ -218,3 +218,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local simulation artifacts
+.runtime/
+simulation_snapshot.json
+python-runtime.zip
